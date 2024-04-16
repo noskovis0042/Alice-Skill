@@ -24,4 +24,15 @@ def skill():
 
 
 def handle_dialog(res, req):
-    pass
+    user_id = req['session']['user_id']
+
+    if req['session']['new']:
+        res['response']['text'] = 'Чтобы запустить игру, напишите "start"'
+
+        sessionStorage[user_id] = {
+            'started': None
+        }
+        return
+
+    if sessionStorage[user_id]['started'] is None:
+        pass
