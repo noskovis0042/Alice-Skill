@@ -1,3 +1,4 @@
+from random import choice
 from flask import Flask, request, jsonify
 import logging
 
@@ -28,13 +29,13 @@ def handle_dialog(res, req):
 
     if req['session']['new']:
         res['response']['text'] = 'Чтобы запустить игру, напишите "start"'
-
-        sessionStorage[user_id] = {'started': False}
+        sessionStorage[user_id] = {'started': False, 'hidden_word': False}
         return
 
     if not sessionStorage[user_id]['started']:
         is_started = req['request']['original_utterance'] == 'start'
-
         if is_started:
             sessionStorage[user_id]['started'] = True
+            if not sessionStorage[user_id]['hidden_word']:
+                sessionStorage[user_id]['hidden_word'] = choice(open('words.txt').readline().split())
             res['response']['text'] = 'Напишите букву'
