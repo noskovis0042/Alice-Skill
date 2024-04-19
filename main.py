@@ -29,10 +29,12 @@ def handle_dialog(res, req):
     if req['session']['new']:
         res['response']['text'] = 'Чтобы запустить игру, напишите "start"'
 
-        sessionStorage[user_id] = {
-            'started': None
-        }
+        sessionStorage[user_id] = {'started': False}
         return
 
-    if sessionStorage[user_id]['started'] is None:
-        pass
+    if not sessionStorage[user_id]['started']:
+        is_started = req['request']['original_utterance'] == 'start'
+
+        if is_started:
+            sessionStorage[user_id]['started'] = True
+            res['response']['text'] = 'Напишите букву'
