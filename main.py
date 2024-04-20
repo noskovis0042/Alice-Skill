@@ -7,6 +7,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 sessionStorage = {}
+difficulties = range(5, 18 + 1)
 
 
 @app.route('/post', methods=['POST'])
@@ -33,18 +34,26 @@ def handle_dialog(res, req):
     user_id = req['session']['user_id']
 
     if req['session']['new']:
-        res['response']['text'] = 'Чтобы запустить игру, напишите "start"'
-        sessionStorage[user_id] = {'started': False, 'hidden_word': False,
-                                   'hidden_letters': list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'), 'guessed_letters': []}
+        res['response']['text'] = 'Чтобы запустить игру, напишите "start [количество букв]"'
+        sessionStorage[user_id] = {'started': False, 'hidden_word': False, 'difficulty': 0,
+                                   'hidden_letters': list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'),
+                                   'guessed_letters': []}
         return
 
     if not sessionStorage[user_id]['started']:
-        is_started = req['request']['original_utterance'] == 'start'
+        is_started = req['request']['original_utterance'][:5] == 'start'
+        sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
         if is_started:
-            sessionStorage[user_id]['started'] = True
-            if not sessionStorage[user_id]['hidden_word']:
-                sessionStorage[user_id]['hidden_word'] = choice(open('data/words.txt').readline().split())
-            res['response']['text'] = get_state()
+            if sessionStorage[user_id]['difficulty'] in difficulties:
+                sessionStorage[user_id]['started'] = True
+                sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
+                if not sessionStorage[user_id]['hidden_word']:
+                    sessionStorage[user_id]['hidden_word'] = choice(
+                        [word for word in open('data/words.txt').readline().split() if
+                         len(word) == sessionStorage[user_id]['difficulty']])
+                res['response']['text'] = get_state()
+            else:
+                res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
 
 
 if __name__ == '__main__':
