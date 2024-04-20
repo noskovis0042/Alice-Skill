@@ -25,11 +25,17 @@ def skill():
 
 
 def handle_dialog(res, req):
+    def get_state():
+        return '\n'.join([f"Неотгаданные буквы: {', '.join(sessionStorage[user_id]['hidden_letters'])}",
+                          f"Отгаданные буквы: {', '.join(sessionStorage[user_id]['guessed_letters'])}",
+                          "Напишите букву"])
+
     user_id = req['session']['user_id']
 
     if req['session']['new']:
         res['response']['text'] = 'Чтобы запустить игру, напишите "start"'
-        sessionStorage[user_id] = {'started': False, 'hidden_word': False}
+        sessionStorage[user_id] = {'started': False, 'hidden_word': False,
+                                   'hidden_letters': list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'), 'guessed_letters': []}
         return
 
     if not sessionStorage[user_id]['started']:
@@ -37,5 +43,9 @@ def handle_dialog(res, req):
         if is_started:
             sessionStorage[user_id]['started'] = True
             if not sessionStorage[user_id]['hidden_word']:
-                sessionStorage[user_id]['hidden_word'] = choice(open('words.txt').readline().split())
-            res['response']['text'] = 'Напишите букву'
+                sessionStorage[user_id]['hidden_word'] = choice(open('data/words.txt').readline().split())
+            res['response']['text'] = get_state()
+
+
+if __name__ == '__main__':
+    app.run()
