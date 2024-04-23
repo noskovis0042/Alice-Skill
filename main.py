@@ -47,12 +47,6 @@ def handle_dialog(res, req):
                                    'hidden_letters': letters,
                                    'guessed_letters': []}
         return
-
-    if all([letter in sessionStorage[user_id]['guessed_letters'] for letter in sessionStorage[user_id]['hidden_word']]):
-        res['response'][
-            'text'] = f"Вы отгадали все буквы слова!\nЗагаданное слово: {sessionStorage[user_id]['hidden_word']}"
-        return
-
     if not sessionStorage[user_id]['started']:
         is_started = req['request']['original_utterance'][:5] == 'start'
         sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
@@ -61,9 +55,9 @@ def handle_dialog(res, req):
                 sessionStorage[user_id]['started'] = True
                 sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
                 if not sessionStorage[user_id]['hidden_word']:
-                    sessionStorage[user_id]['hidden_word'] = choice(
-                        [word for word in open('data/words.txt').readline().split() if
-                         len(word) == sessionStorage[user_id]['difficulty']]).upper()
+                    words = [word for word in open('data/words.txt', encoding='utf-8').readline().split() if
+                             len(word) == sessionStorage[user_id]['difficulty']]
+                    sessionStorage[user_id]['hidden_word'] = choice(words).upper()
                 res['response']['text'] = get_state()
             else:
                 res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
@@ -73,11 +67,18 @@ def handle_dialog(res, req):
         if inp in letters:
             if inp in sessionStorage[user_id]['hidden_letters']:
                 sessionStorage[user_id]['guessed_letters'].append(
-                    sessionStorage[user_id]['hidden_letters'].pop(sessionStorage[user_id]['hidden_letters'].find(inp)))
+                    sessionStorage[user_id]['hidden_letters'].pop(sessionStorage[user_id]['hidden_letters'].index(inp)))
             else:
                 ret = "Вы уже называли эту букву. Попробуйте другую."
         else:
             ret = "Неправильный ввод."
+
+        if all([(letter in sessionStorage[user_id]['guessed_letters']) for letter in
+                sessionStorage[user_id]['hidden_word']]):
+            res['response'][
+                'text'] = f"Вы отгадали все буквы слова!\nЗагаданное слово: {sessionStorage[user_id]['hidden_word']}"
+            return
+
         res['response']['text'] = ret + "\n" + get_state()
 
 
