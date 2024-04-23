@@ -27,7 +27,14 @@ def skill():
 
 def handle_dialog(res, req):
     def get_state():
-        return '\n'.join([f"Неотгаданные буквы: {', '.join(sessionStorage[user_id]['hidden_letters'])}",
+        cur_word = []
+        for letter in sessionStorage[user_id]['hidden_word']:
+            if letter in sessionStorage[user_id]['guessed_letters']:
+                cur_word.append(letter)
+            else:
+                cur_word.append('_')
+        return '\n'.join(["Слово: "+"".join(cur_word),
+                          f"Неотгаданные буквы: {', '.join(sessionStorage[user_id]['hidden_letters'])}",
                           f"Отгаданные буквы: {', '.join(sessionStorage[user_id]['guessed_letters'])}",
                           "Напишите букву"])
 
