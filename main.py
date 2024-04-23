@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.INFO)
 
 sessionStorage = {}
 difficulties = range(5, 18 + 1)
+letters = list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ')
 
 
 @app.route('/post', methods=['POST'])
@@ -33,7 +34,7 @@ def handle_dialog(res, req):
                 cur_word.append(letter)
             else:
                 cur_word.append('_')
-        return '\n'.join(["Слово: "+"".join(cur_word),
+        return '\n'.join(["Слово: " + "".join(cur_word),
                           f"Неотгаданные буквы: {', '.join(sessionStorage[user_id]['hidden_letters'])}",
                           f"Отгаданные буквы: {', '.join(sessionStorage[user_id]['guessed_letters'])}",
                           "Напишите букву"])
@@ -43,7 +44,7 @@ def handle_dialog(res, req):
     if req['session']['new']:
         res['response']['text'] = 'Чтобы запустить игру, напишите "start [количество букв]"'
         sessionStorage[user_id] = {'started': False, 'hidden_word': False, 'difficulty': 0,
-                                   'hidden_letters': list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'),
+                                   'hidden_letters': letters,
                                    'guessed_letters': []}
         return
 
@@ -57,10 +58,22 @@ def handle_dialog(res, req):
                 if not sessionStorage[user_id]['hidden_word']:
                     sessionStorage[user_id]['hidden_word'] = choice(
                         [word for word in open('data/words.txt').readline().split() if
-                         len(word) == sessionStorage[user_id]['difficulty']])
+                         len(word) == sessionStorage[user_id]['difficulty']]).upper()
                 res['response']['text'] = get_state()
             else:
                 res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
+    else:
+        inp = req['request']['original_utterance']
+        ret = ""
+        if inp in letters:
+            if inp in sessionStorage[user_id]['hidden_letters']:
+                sessionStorage[user_id]['guessed_letters'].append(
+                    sessionStorage[user_id]['hidden_letters'].pop(sessionStorage[user_id]['hidden_letters'].find(inp)))
+            else:
+                ret = "Вы уже называли эту букву. Попробуйте другую."
+        else:
+            ret = "Неправильный ввод."
+        res['response']['text'] = ret + "\n" + get_state()
 
 
 if __name__ == '__main__':
