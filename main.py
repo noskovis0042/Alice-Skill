@@ -48,6 +48,11 @@ def handle_dialog(res, req):
                                    'guessed_letters': []}
         return
 
+    if all([letter in sessionStorage[user_id]['guessed_letters'] for letter in sessionStorage[user_id]['hidden_word']]):
+        res['response'][
+            'text'] = f"Вы отгадали все буквы слова!\nЗагаданное слово: {sessionStorage[user_id]['hidden_word']}"
+        return
+
     if not sessionStorage[user_id]['started']:
         is_started = req['request']['original_utterance'][:5] == 'start'
         sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
