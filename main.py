@@ -75,7 +75,6 @@ def handle_dialog(res, req):
                 res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
     else:
         inp = req['request']['original_utterance'].upper()
-        print(inp, sessionStorage[user_id])
         if inp in letters:
             if inp in sessionStorage[user_id]['hidden_letters']:
                 sessionStorage[user_id]['guessed_letters'].append(
@@ -90,6 +89,8 @@ def handle_dialog(res, req):
                         ret += " И попытки кончились. Попытайтесь ещё раз."
                         ret += '\nЧтобы перезапустить игру, напишите "start\n[количество букв] [количество попыток]"'
                         sessionStorage[user_id]['started'] = False
+                        sessionStorage[user_id]['hidden_letters'] = letters
+                        sessionStorage[user_id]['guessed_letters'] = []
                         res['response']['text'] = ret
                         return
             else:
