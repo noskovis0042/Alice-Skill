@@ -34,7 +34,8 @@ def handle_dialog(res, req):
                 cur_word.append(letter)
             else:
                 cur_word.append('_')
-        return '\n'.join(["Слово: " + "".join(cur_word),
+        return '\n'.join(["Слово: " + " ".join(cur_word),
+                          f"Осталось попыток: {sessionStorage[user_id]['try_count']}",
                           f"Неотгаданные буквы: {', '.join(sessionStorage[user_id]['hidden_letters'])}",
                           f"Отгаданные буквы: {', '.join(sessionStorage[user_id]['guessed_letters'])}",
                           "Напишите букву"])
@@ -42,36 +43,59 @@ def handle_dialog(res, req):
     user_id = req['session']['user_id']
 
     if req['session']['new']:
-        res['response']['text'] = 'Чтобы запустить игру, напишите "start [количество букв]"'
-        sessionStorage[user_id] = {'started': False, 'hidden_word': False, 'difficulty': 0,
+        res['response']['text'] = 'Чтобы запустить игру, напишите "start\n[количество букв] [количество попыток]"'
+        sessionStorage[user_id] = {'started': False, 'hidden_word': False, "try_count": False, 'difficulty': 0,
                                    'hidden_letters': letters,
                                    'guessed_letters': []}
         return
     if not sessionStorage[user_id]['started']:
-        is_started = req['request']['original_utterance'][:5] == 'start'
-        sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
+        text = req['request']['original_utterance'].split()
+        is_started = text[0] == 'start'
+        try:
+            difficulty = int(text[1])
+            try_count = int(text[2])
+        except Exception:
+            res['response']['text'] = 'Неправильный ввод!'
+            return
+
         if is_started:
-            if sessionStorage[user_id]['difficulty'] in difficulties:
-                sessionStorage[user_id]['started'] = True
-                sessionStorage[user_id]['difficulty'] = int(req['request']['original_utterance'][6:])
-                if not sessionStorage[user_id]['hidden_word']:
-                    words = [word for word in open('data/words.txt', encoding='utf-8').readline().split() if
-                             len(word) == sessionStorage[user_id]['difficulty']]
-                    sessionStorage[user_id]['hidden_word'] = choice(words).upper()
-                res['response']['text'] = get_state()
+            if difficulty in difficulties:
+                if try_count > 10:
+                    res['response']['text'] = 'Слишком много попыток'
+                else:
+                    sessionStorage[user_id]['started'] = True
+                    sessionStorage[user_id]['difficulty'] = difficulty
+                    sessionStorage[user_id]['try_count'] = try_count
+                    if not sessionStorage[user_id]['hidden_word']:
+                        words = [word for word in open('data/words.txt', encoding='utf-8').readline().split() if
+                                 len(word) == sessionStorage[user_id]['difficulty']]
+                        sessionStorage[user_id]['hidden_word'] = choice(words).upper()
+                    res['response']['text'] = get_state()
             else:
                 res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
     else:
-        inp = req['request']['original_utterance']
-        ret = ""
+        inp = req['request']['original_utterance'].upper()
+        print(inp, sessionStorage[user_id])
         if inp in letters:
             if inp in sessionStorage[user_id]['hidden_letters']:
                 sessionStorage[user_id]['guessed_letters'].append(
                     sessionStorage[user_id]['hidden_letters'].pop(sessionStorage[user_id]['hidden_letters'].index(inp)))
+                if inp in list(sessionStorage[user_id]['hidden_word']):
+                    ret = "Вы угадали!"
+                else:
+                    sessionStorage[user_id]['try_count'] -= 1
+                    ret = "Вы не угадали!"
+
+                    if not sessionStorage[user_id]['try_count'] or sessionStorage[user_id]['try_count'] <= 0:
+                        ret += " И попытки кончились. Попытайтесь ещё раз."
+                        ret += '\nЧтобы перезапустить игру, напишите "start\n[количество букв] [количество попыток]"'
+                        sessionStorage[user_id]['started'] = False
+                        res['response']['text'] = ret
+                        return
             else:
                 ret = "Вы уже называли эту букву. Попробуйте другую."
         else:
-            ret = "Неправильный ввод."
+            ret = "Неправильный ввод!"
 
         if all([(letter in sessionStorage[user_id]['guessed_letters']) for letter in
                 sessionStorage[user_id]['hidden_word']]):
