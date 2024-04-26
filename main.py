@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.INFO)
 
 sessionStorage = {}
 difficulties = range(5, 18 + 1)
-letters = list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ')
 
 
 @app.route('/post', methods=['POST'])
@@ -45,7 +44,7 @@ def handle_dialog(res, req):
     if req['session']['new']:
         res['response']['text'] = 'Чтобы запустить игру, напишите "start\n[количество букв] [количество попыток]"'
         sessionStorage[user_id] = {'started': False, 'hidden_word': False, "try_count": False, 'difficulty': 0,
-                                   'hidden_letters': letters,
+                                   'hidden_letters': list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'),
                                    'guessed_letters': []}
         return
     if not sessionStorage[user_id]['started']:
@@ -75,7 +74,7 @@ def handle_dialog(res, req):
                 res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
     else:
         inp = req['request']['original_utterance'].upper()
-        if inp in letters:
+        if inp in list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'):
             if inp in sessionStorage[user_id]['hidden_letters']:
                 sessionStorage[user_id]['guessed_letters'].append(
                     sessionStorage[user_id]['hidden_letters'].pop(sessionStorage[user_id]['hidden_letters'].index(inp)))
@@ -89,7 +88,7 @@ def handle_dialog(res, req):
                         ret += " И попытки кончились. Попытайтесь ещё раз."
                         ret += '\nЧтобы перезапустить игру, напишите "start\n[количество букв] [количество попыток]"'
                         sessionStorage[user_id]['started'] = False
-                        sessionStorage[user_id]['hidden_letters'] = letters
+                        sessionStorage[user_id]['hidden_letters'] = list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ')
                         sessionStorage[user_id]['guessed_letters'] = []
                         res['response']['text'] = ret
                         return
@@ -101,7 +100,11 @@ def handle_dialog(res, req):
         if all([(letter in sessionStorage[user_id]['guessed_letters']) for letter in
                 sessionStorage[user_id]['hidden_word']]):
             res['response'][
-                'text'] = f"Вы отгадали все буквы слова!\nЗагаданное слово: {sessionStorage[user_id]['hidden_word']}"
+                'text'] = (f"Вы отгадали все буквы слова!\nЗагаданное слово: {sessionStorage[user_id]['hidden_word']}" +
+                           '\nЧтобы перезапустить игру, напишите "start\n[количество букв] [количество попыток]"')
+            sessionStorage[user_id]['started'] = False
+            sessionStorage[user_id]['hidden_letters'] = list('АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ')
+            sessionStorage[user_id]['guessed_letters'] = []
             return
 
         res['response']['text'] = ret + "\n" + get_state()
