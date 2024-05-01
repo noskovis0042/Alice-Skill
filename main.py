@@ -61,6 +61,8 @@ def handle_dialog(res, req):
             if difficulty in difficulties:
                 if try_count > 10:
                     res['response']['text'] = 'Слишком много попыток'
+                elif try_count < 1:
+                    res['response']['text'] = 'Нельзя выиграть, даже не попытавшись :('
                 else:
                     sessionStorage[user_id]['started'] = True
                     sessionStorage[user_id]['difficulty'] = difficulty
