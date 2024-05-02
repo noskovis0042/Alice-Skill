@@ -1,6 +1,17 @@
 from random import choice
+from sqlite3 import connect
 from flask import Flask, request, jsonify
 import logging
+
+
+def get_word(length):
+    conn = connect('viselica.sqlite')
+    cursor = conn.cursor()
+    res = [t[0] for t in cursor.execute(f'SELECT slovo FROM words{length}').fetchall()]
+    cursor.close()
+    conn.close()
+    return choice(res).upper()
+
 
 app = Flask(__name__)
 
@@ -68,9 +79,7 @@ def handle_dialog(res, req):
                     sessionStorage[user_id]['difficulty'] = difficulty
                     sessionStorage[user_id]['try_count'] = try_count
                     if not sessionStorage[user_id]['hidden_word']:
-                        words = [word for word in open('data/words.txt', encoding='utf-8').readline().split() if
-                                 len(word) == sessionStorage[user_id]['difficulty']]
-                        sessionStorage[user_id]['hidden_word'] = choice(words).upper()
+                        sessionStorage[user_id]['hidden_word'] = get_word(sessionStorage[user_id]['difficulty'])
                     res['response']['text'] = get_state()
             else:
                 res['response']['text'] = 'Увы, у нас нет слов с таким количеством букв'
